@@ -27,23 +27,6 @@
       color,
     });
   };
-
-  const clearCanvas = () => {
-    const canvas = document.getElementById("canvas-board") as HTMLCanvasElement;
-    if (canvas) {
-      const context = canvas.getContext("2d");
-      context.fillStyle = "white";
-      context.fillRect(0, 0, canvas.width, canvas.height);
-    }
-  };
-
-  const revert = () => {
-    const canvas = document.getElementById("canvas-board") as HTMLCanvasElement;
-    if (canvas && $canvasStore.imageData) {
-      const context = canvas.getContext("2d");
-      context.putImageData($canvasStore.imageData, 0, 0);
-    }
-  };
 </script>
 
 <aside class="toolbar">
@@ -71,14 +54,11 @@
       type="range"
       min="1"
       max="15"
-      bind:value={$canvasStore.fontThickness}
+      bind:value={$canvasStore.lineThickness}
     />
   </div>
 
-  <div class="toolbar-actions">
-    <button on:click={clearCanvas}>Clear Drawing</button>
-    <button on:click={revert} disabled={!$canvasStore.imageData}>Revert</button>
-  </div>
+  <div class="toolbar-actions" />
 </aside>
 
 <style>
