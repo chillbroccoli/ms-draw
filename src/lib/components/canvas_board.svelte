@@ -4,27 +4,32 @@
   import { canvasStore } from "$lib/stores/canvas";
 
   let container: HTMLDivElement;
-  let canvas: HTMLCanvasElement | null = null;
-  let canvasContext: CanvasRenderingContext2D | null = null;
+  let canvas: HTMLCanvasElement;
+  let canvasContext: CanvasRenderingContext2D;
   let isDrawing = false;
 
   const prepareCanvas = () => {
     canvas.width = container.clientWidth;
     canvas.height = container.clientHeight;
-    canvas.style.width = `100%`;
-    canvas.style.height = `100%`;
+    canvas.style.width = "100%";
+    canvas.style.height = "100%";
 
-    const context = canvas.getContext("2d");
-    context.lineCap = "round";
-    context.strokeStyle = $canvasStore.color;
-    context.lineWidth = 1;
-    canvasContext = context;
+    canvasContext = canvas.getContext("2d", { willReadFrequently: true });
+    canvasContext.lineCap = "round";
+    canvasContext.strokeStyle = $canvasStore.color;
+    canvasContext.lineWidth = $canvasStore.lineThickness;
   };
 
   const startDrawing = (event: MouseEvent) => {
+    const newSnapshot = canvasContext.getImageData(
+      0,
+      0,
+      canvas.width,
+      canvas.height
+    );
     canvasStore.set({
       ...$canvasStore,
-      imageData: canvasContext.getImageData(0, 0, canvas.width, canvas.height),
+      snapshots: [...$canvasStore.snapshots, newSnapshot],
     });
     const { offsetX, offsetY } = event;
     canvasContext.beginPath();
@@ -56,7 +61,7 @@
 
   $: {
     if (canvasContext) {
-      canvasContext.lineWidth = $canvasStore.fontThickness;
+      canvasContext.lineWidth = $canvasStore.lineThickness;
     }
   }
 </script>
