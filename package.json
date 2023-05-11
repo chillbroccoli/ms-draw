@@ -1,27 +1,27 @@
 {
-  "name": "vite-svelte",
-  "private": true,
-  "version": "0.0.0",
-  "type": "module",
-  "scripts": {
-    "dev": "vite",
-    "build": "vite build",
-    "preview": "vite preview",
-    "check": "svelte-check --tsconfig ./tsconfig.json",
-    "format": "prettier --write src/"
-  },
-  "devDependencies": {
-    "@sveltejs/vite-plugin-svelte": "^2.0.3",
-    "@tsconfig/svelte": "^4.0.1",
-    "@types/node": "^20.1.0",
-    "prettier": "^2.8.8",
-    "svelte": "^3.57.0",
-    "svelte-check": "^2.10.3",
-    "tslib": "^2.5.0",
-    "typescript": "^5.0.2",
-    "vite": "^4.3.2"
-  },
-  "dependencies": {
-    "@tabler/icons-svelte": "^2.17.0"
-  }
+	"name": "vite-svelte",
+	"private": true,
+	"version": "0.0.0",
+	"type": "module",
+	"scripts": {
+		"dev": "vite",
+		"build": "vite build",
+		"preview": "vite preview",
+		"check": "svelte-check --tsconfig ./tsconfig.json",
+		"format": "prettier --write src/"
+	},
+	"devDependencies": {
+		"@sveltejs/vite-plugin-svelte": "^2.0.3",
+		"@tsconfig/svelte": "^4.0.1",
+		"@types/node": "^20.1.0",
+		"prettier": "^2.8.8",
+		"svelte": "^3.57.0",
+		"svelte-check": "^2.10.3",
+		"tslib": "^2.5.0",
+		"typescript": "^5.0.2",
+		"vite": "^4.3.2"
+	},
+	"dependencies": {
+		"@tabler/icons-svelte": "^2.17.0"
+	}
 }
