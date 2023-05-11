@@ -1,84 +1,89 @@
 <script lang="ts">
-  import { onMount } from "svelte";
+	import { onMount } from "svelte";
 
-  import { canvasStore } from "$lib/stores/canvas";
+	import { strokeStyle, lineWidth } from "$lib/stores/canvas";
+	import { history, currentIndex } from "$lib/stores/history";
 
-  let container: HTMLDivElement;
-  let canvas: HTMLCanvasElement;
-  let canvasContext: CanvasRenderingContext2D;
-  let isDrawing = false;
+	let container: HTMLDivElement;
+	let canvas: HTMLCanvasElement;
+	let canvasContext: CanvasRenderingContext2D;
+	let isDrawing = false;
 
-  const prepareCanvas = () => {
-    canvas.width = container.clientWidth;
-    canvas.height = container.clientHeight;
-    canvas.style.width = "100%";
-    canvas.style.height = "100%";
+	const prepareCanvas = () => {
+		canvas.width = container.clientWidth;
+		canvas.height = container.clientHeight;
+		canvas.style.width = "100%";
+		canvas.style.height = "100%";
 
-    canvasContext = canvas.getContext("2d", { willReadFrequently: true });
-    canvasContext.lineCap = "round";
-    canvasContext.strokeStyle = $canvasStore.color;
-    canvasContext.lineWidth = $canvasStore.lineThickness;
-  };
+		canvasContext = canvas.getContext("2d", { willReadFrequently: true });
+		canvasContext.lineCap = "round";
+		canvasContext.strokeStyle = $strokeStyle;
+		canvasContext.lineWidth = $lineWidth;
+		saveCanvasState();
+	};
 
-  const startDrawing = (event: MouseEvent) => {
-    const newSnapshot = canvasContext.getImageData(
-      0,
-      0,
-      canvas.width,
-      canvas.height
-    );
-    canvasStore.set({
-      ...$canvasStore,
-      snapshots: [...$canvasStore.snapshots, newSnapshot],
-    });
-    const { offsetX, offsetY } = event;
-    canvasContext.beginPath();
-    canvasContext.moveTo(offsetX, offsetY);
-    isDrawing = true;
-  };
+	const saveCanvasState = () => {
+		if (!canvasContext) return;
 
-  const finishDrawing = () => {
-    canvasContext.closePath();
-    isDrawing = false;
-  };
+		if ($currentIndex < $history.length - 1) {
+			history.update((history) => {
+				const newHistory = [...history];
+				newHistory.splice(0, $currentIndex + 1);
+				return newHistory;
+			});
+		}
 
-  const draw = (event: MouseEvent) => {
-    if (!isDrawing) return;
-    const { offsetX, offsetY } = event;
-    canvasContext.lineTo(offsetX, offsetY);
-    canvasContext.stroke();
-  };
+		const imageData = canvasContext.getImageData(0, 0, canvas.width, canvas.height);
 
-  onMount(() => {
-    prepareCanvas();
-  });
+		history.set([...$history, imageData]);
+		currentIndex.update((i) => (i = i + 1));
+	};
 
-  $: {
-    if (canvasContext) {
-      canvasContext.strokeStyle = $canvasStore.color;
-    }
-  }
+	const startDrawing = (event: MouseEvent) => {
+		const { offsetX, offsetY } = event;
+		canvasContext.beginPath();
+		canvasContext.moveTo(offsetX, offsetY);
+		isDrawing = true;
+	};
 
-  $: {
-    if (canvasContext) {
-      canvasContext.lineWidth = $canvasStore.lineThickness;
-    }
-  }
+	const finishDrawing = () => {
+		canvasContext.closePath();
+		isDrawing = false;
+		saveCanvasState();
+	};
+
+	const draw = (event: MouseEvent) => {
+		if (!isDrawing) return;
+		const { offsetX, offsetY } = event;
+		canvasContext.lineTo(offsetX, offsetY);
+		canvasContext.stroke();
+	};
+
+	onMount(() => {
+		prepareCanvas();
+	});
+
+	$: {
+		if (canvasContext) {
+			canvasContext.strokeStyle = $strokeStyle;
+			canvasContext.lineWidth = $lineWidth;
+		}
+	}
 </script>
 
 <div bind:this={container} class="canvas-container">
-  <canvas
-    id="canvas-board"
-    bind:this={canvas}
-    on:mousedown={startDrawing}
-    on:mouseup={finishDrawing}
-    on:mousemove={draw}
-  />
+	<canvas
+		id="canvas-board"
+		bind:this={canvas}
+		on:mousedown={startDrawing}
+		on:mouseup={finishDrawing}
+		on:mousemove={draw}
+	/>
 </div>
 
 <style>
-  .canvas-container {
-    width: 100%;
-    height: 100%;
-  }
+	.canvas-container {
+		width: 100%;
+		height: 100%;
+	}
 </style>
