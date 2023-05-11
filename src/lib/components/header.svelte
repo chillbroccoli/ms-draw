@@ -1,92 +1,108 @@
 <script lang="ts">
-  import { canvasStore } from "$lib/stores/canvas";
+	import { onMount } from "svelte";
+	import { history, currentIndex } from "$lib/stores/history";
 
-  const clearCanvas = () => {
-    const canvas = document.getElementById("canvas-board") as HTMLCanvasElement;
-    if (canvas.getContext) {
-      const context = canvas.getContext("2d");
-      context.fillStyle = "white";
-      context.fillRect(0, 0, canvas.width, canvas.height);
-    }
-  };
+	let canvas: HTMLCanvasElement;
+	let context: CanvasRenderingContext2D;
 
-  const exportToImage = () => {
-    const canvas = document.getElementById("canvas-board") as HTMLCanvasElement;
-    const dataURL = canvas.toDataURL();
-    const link = document.createElement("a");
-    link.href = dataURL;
-    link.download = "drawing.png";
-    link.click();
-    link.remove();
-  };
+	const clearCanvas = () => {
+		if (!context) return;
 
-  const undo = () => {
-    const canvas = document.getElementById("canvas-board") as HTMLCanvasElement;
-    if (canvas.getContext) {
-      const context = canvas.getContext("2d");
-      const lastSnapshotIndex = $canvasStore.snapshots.length - 1;
-      const lastSnapshot = $canvasStore.snapshots[lastSnapshotIndex];
-      context.putImageData(lastSnapshot, 0, 0);
+		context.fillStyle = "white";
+		context.fillRect(0, 0, canvas.width, canvas.height);
+	};
 
-      const newSnapshots = [...$canvasStore.snapshots];
-      newSnapshots.pop();
+	function undo() {
+		if (!context) return;
 
-      canvasStore.set({
-        ...$canvasStore,
-        snapshots: [...newSnapshots],
-      });
-    }
-  };
+		if ($currentIndex > 0) {
+			currentIndex.update((i) => (i = i - 1));
+			let imageData = $history[$currentIndex];
+			context.putImageData(imageData, 0, 0);
+		}
+	}
 
-  function keydown(event: KeyboardEvent) {
-    const isZKey = event.key === "z";
-    const isRKey = event.key === "r";
-    const metaKeyOrCtrlKey = event.metaKey || event.ctrlKey;
-    const hasSnapshots = $canvasStore.snapshots.length;
+	function redo() {
+		if (!context) return;
 
-    if (isZKey && metaKeyOrCtrlKey && hasSnapshots) {
-      undo();
-    }
+		if ($currentIndex < $history.length - 1) {
+			currentIndex.update((i) => (i = i + 1));
+			let imageData = $history[$currentIndex];
+			context.putImageData(imageData, 0, 0);
+		}
+	}
 
-    if (isRKey && metaKeyOrCtrlKey) {
-      // todo: add redo functionality
-    }
-  }
+	const exportToImage = () => {
+		const canvas = document.getElementById("canvas-board") as HTMLCanvasElement;
+		const dataURL = canvas.toDataURL();
+		const link = document.createElement("a");
+		link.href = dataURL;
+		link.download = "drawing.png";
+		link.click();
+		link.remove();
+	};
+
+	function keydown(event: KeyboardEvent) {
+		const isZKey = event.key === "z";
+		const isRKey = event.key === "r";
+		const metaKeyOrCtrlKey = event.metaKey || event.ctrlKey;
+		const canUndo = $currentIndex > 0;
+		const canRedo = $currentIndex < $history.length - 1;
+
+		if (isZKey && metaKeyOrCtrlKey && canUndo) {
+			undo();
+		}
+
+		if (isRKey && metaKeyOrCtrlKey && canRedo) {
+			redo();
+		}
+	}
+
+	$: console.log("HISTORY", $history);
+	$: console.log("CURRENT INDEX", $currentIndex);
+
+	$: if (canvas?.getContext) {
+		context = canvas.getContext("2d");
+	}
+
+	onMount(() => {
+		const canvasEl = document.getElementById("canvas-board") as HTMLCanvasElement;
+		if (canvasEl) canvas = canvasEl;
+	});
 </script>
 
 <svelte:window on:keydown={keydown} />
 
 <header>
-  <div class="title-bar title-bar-container">
-    <div class="title-bar-text">untitled - Paint</div>
-    <div class="title-bar-controls">
-      <button aria-label="Minimize" />
-      <button aria-label="Maximize" />
-      <button aria-label="Close" />
-    </div>
-  </div>
-  <div class="actions-buttons">
-    <button on:click={clearCanvas}>Clear Drawing</button>
-    <button on:click={exportToImage}>Export To Image</button>
-    <button on:click={undo} disabled={!$canvasStore.snapshots.length}
-      >Undo</button
-    >
-  </div>
+	<div class="title-bar title-bar-container">
+		<div class="title-bar-text">untitled - Paint</div>
+		<div class="title-bar-controls">
+			<button aria-label="Minimize" />
+			<button aria-label="Maximize" />
+			<button aria-label="Close" />
+		</div>
+	</div>
+	<div class="actions-buttons">
+		<button on:click={clearCanvas}>Clear Drawing</button>
+		<button on:click={exportToImage}>Export To Image</button>
+		<button on:click={undo} disabled={!($currentIndex > 0)}>Undo</button>
+		<button on:click={redo} disabled={!($currentIndex < $history.length - 1)}>Redo</button>
+	</div>
 </header>
 
 <style>
-  .title-bar-container {
-    padding: 0.75rem;
-  }
+	.title-bar-container {
+		padding: 0.75rem;
+	}
 
-  .actions-buttons {
-    display: flex;
-    background-color: #c0c0c0;
-  }
+	.actions-buttons {
+		display: flex;
+		background-color: #c0c0c0;
+	}
 
-  .actions-buttons > button {
-    border: none !important;
-    outline: none !important;
-    box-shadow: none !important;
-  }
+	.actions-buttons > button {
+		border: none !important;
+		outline: none !important;
+		box-shadow: none !important;
+	}
 </style>
